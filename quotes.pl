@@ -41,21 +41,33 @@ foreach (@quotes) {
     $output  .= "($quote[6])";  #% CHG
     $output  .= "\n";
 }
-my $timestamp = POSIX::strftime("%Y-%m-%dT%H:%M:%S", localtime);
+my $timestamp = POSIX::strftime("%Y-%m-%dT%H:%M:%SZ", gmtime);
+#I cheat here and explicitly use the same structure as the link.
+#mostly because for my application I don't actually need it. and 
+#I dont want to deal with the warning from SimpleFeed telling me
+#it is doing just that.
 if($config->val('config','format') eq 'feed'){
     my $feed = new XML::Atom::SimpleFeed(
-        title   => 'STOCKS',
+        title   => 'CURRENT STOCK PRICES',
         link    => $config->val('feed','link'),
+        id    => $config->val('feed','link'),
         updated => $timestamp,
         author  => 'quotes.pl'
     );
     $feed->add_entry(
-        title =>'stocks',
-        link  =>$config->val('feed','link') . $timestamp,
+        title =>'Prices: '. join(' ',@companies),
+        link  =>$config->val('feed','link') . 'stocks/' . $timestamp,
+        id  =>$config->val('feed','link') . 'stocks/' . $timestamp,
         summary=>$output,
         updated =>$timestamp 
     );
-    $feed->print;
-} else {
-    print "$output\n";
+    $output = $feed->as_string;
+} 
+#write to file if desired.
+if($config->val('config','write') ne 'false'){
+    open FILEOUT,'>',$config->val('config','write') or die $!;
+    print FILEOUT $output;
+    close FILEOUT;
+}else{
+    print $output . "\n";
 }
