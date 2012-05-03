@@ -5,15 +5,22 @@
 use warnings;
 use strict;
 use Finance::YahooQuote;
-use XML::RSS;
+use Config::IniFiles;
+use XML::Atom::SimpleFeed;
+use POSIX; 
 
+#read config file
+my $config = new Config::IniFiles( 
+    -file=>"config.ini",
+    -default=>"config"
+);
 
 #read the stock symbols from a file
 #in which each symbol is on a new line
 #and store in an array
 
 my @companies = ();
-open COMPANIES, "companies.txt" or die $!;
+open COMPANIES, $config->val('config','symbols') or die $!;
 while(<COMPANIES>){
     push @companies, $_;
 }
@@ -34,4 +41,21 @@ foreach (@quotes) {
     $output  .= "($quote[6])";  #% CHG
     $output  .= "\n";
 }
-print "$output\n";
+my $timestamp = POSIX::strftime("%Y-%m-%dT%H:%M:%S", localtime);
+if($config->val('config','format') eq 'feed'){
+    my $feed = new XML::Atom::SimpleFeed(
+        title   => 'STOCKS',
+        link    => $config->val('feed','link'),
+        updated => $timestamp,
+        author  => 'quotes.pl'
+    );
+    $feed->add_entry(
+        title =>'stocks',
+        link  =>$config->val('feed','link') . $timestamp,
+        summary=>$output,
+        updated =>$timestamp 
+    );
+    $feed->print;
+} else {
+    print "$output\n";
+}
