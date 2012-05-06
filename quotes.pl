@@ -10,8 +10,9 @@ use XML::Atom::SimpleFeed;
 use POSIX; 
 
 #read config file
+my ($configfile) = @ARGV;
 my $config = new Config::IniFiles( 
-    -file=>"config.ini",
+    -file=>$configfile,
     -default=>"config"
 );
 
@@ -50,7 +51,7 @@ if($config->val('config','format') eq 'feed'){
     my $feed = new XML::Atom::SimpleFeed(
         title   => 'CURRENT STOCK PRICES',
         link    => $config->val('feed','link'),
-        id    => $config->val('feed','link'),
+        id      => $config->val('feed','link'),
         updated => $timestamp,
         author  => 'quotes.pl'
     );
